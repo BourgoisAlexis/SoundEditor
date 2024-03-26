@@ -112,7 +112,7 @@ namespace SoundEditor {
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e) {
             _playing = false;
-            Log("END");
+            PlaySound();
         }
 
         private void PlaySound() {
@@ -126,8 +126,6 @@ namespace SoundEditor {
 
             _playing = true;
             UpdateTrackerPosition();
-
-            Log($"Playing > {_fileName}");
         }
 
         private void ShowWaveForm() {
@@ -145,7 +143,9 @@ namespace SoundEditor {
         }
 
         private void UpdateWaveForm() {
-            _waveViewer.SamplesPerPixel = (int)_waveViewer.WaveStream.TotalTime.TotalMilliseconds;
+            int bytesPerSample = (_waveViewer.WaveStream.WaveFormat.BitsPerSample / 4);
+            var samples = _waveViewer.WaveStream.Length / (bytesPerSample);
+            _waveViewer.SamplesPerPixel = (int)(samples / Width);
             _waveViewer.SamplesPerPixel /= _zoomFactor;
         }
 
@@ -154,11 +154,10 @@ namespace SoundEditor {
                 return;
 
             double timeRatio = _audioFileReader.CurrentTime.TotalMilliseconds / _audioFileReader.TotalTime.TotalMilliseconds;
-            double lengthRatio = 
+            timeRatio *= _zoomFactor;
             _tracker.Location = new Point((int)Math.Round(_waveViewer.Width * timeRatio), 0);
 
-            Log(_audioFileReader.CurrentTime.ToString());
-            await Task.Delay(10);
+            await Task.Delay(1);
             UpdateTrackerPosition();
         }
 
@@ -192,8 +191,6 @@ namespace SoundEditor {
                 _zoomFactor = 1;
 
             UpdateWaveForm();
-
-            Log($"Zoom factor : {_zoomFactor}");
         }
 
         private void MainForm_Paint(object sender, PaintEventArgs e) {
